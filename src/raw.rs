@@ -190,20 +190,40 @@ impl<'arena, V: Hash + Copy + Ord> Context<'arena, V> {
     // en parcourant récrusivement et simultanément les deux BDDs passés en
     // paramètres.
     pub fn and(&mut self, a: Bdd<'arena, V>, b: Bdd<'arena, V>) -> Bdd<'arena, V> {
-        // À COMPLÉTER
-        panic!()
+        match (a, b) {
+            (Bdd(&Node::True), _) => return b,
+            (_, Bdd(&Node::True)) => return a,
+            (Bdd(&Node::False), _) => return Bdd(&Node::False),
+            (_, Bdd(&Node::False)) => return Bdd(&Node::False),
+            (Bdd(Node::If{var : var_a, children : children_a}), Bdd(Node::If{var : var_b, children : children_b})) => {
+                if var_a == var_b {
+                    let children2 = [self.and(children_a[0], children_b[0]), self.and(children_a[1], children_b[1])];
+                    return self.node(*var_a, children2)
+                } else if var_a < var_b {
+                    let children2 = [self.and(children_a[0], b), self.and(children_a[1], b)];
+                    return self.node(*var_a, children2)
+                } else {
+                    let children2 = [self.and(a, children_b[0]), self.and(a, children_b[1])];
+                    return self.node(*var_b, children2)
+                }
+            }
+        }
     }
 
     // La méthode `or` renvoie la disjonction des BDDs donnés en paramètres.
     pub fn or(&mut self, a: Bdd<'arena, V>, b: Bdd<'arena, V>) -> Bdd<'arena, V> {
-        // À COMPLÉTER
-        panic!()
+        let na = self.not(a);
+        let nb = self.not(b);
+        let nand = self.and(na, nb);
+        return self.not(nand)
     }
 
     // La méthode `xor` renvoie la disjonction exclusive des BDDs donnés en paramètres.
     pub fn xor(&mut self, a: Bdd<'arena, V>, b: Bdd<'arena, V>) -> Bdd<'arena, V> {
-        // À COMPLÉTER
-        panic!()
+        let aob = self.or(a, b);
+        let aab = self.and(a, b);
+        let naab = self.not(aab);
+        return self.and(aob, naab);
     }
 }
 
