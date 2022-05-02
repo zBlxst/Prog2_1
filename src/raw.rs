@@ -105,6 +105,7 @@ pub struct Context<'arena, V> {
     // TABLES DE MÉMOÏSATION).
 }
 
+
 // Toutes les opérations sur les BDDs demandent à ce que le type `V`
 // des variables implémente `Hash + Copy + Ord`:
 //   - `Hash` est nécessaire pour le hash-consing.
@@ -119,8 +120,7 @@ impl<'arena, V: Hash + Copy + Ord> Context<'arena, V> {
     // `new` crée un nouveau contexte de BDD, à partir d'une arène d'allocation
     // déjà créée par l'appelant.
     pub fn new(alloc: &'arena Bump) -> Self {
-        // À COMPLÉTER
-        panic!()
+        return Context { alloc: alloc, hashcons: HashSet::new() }
     }
 
     // La méthode privée `hashcons` prend un nœud en paramètre, et
@@ -128,8 +128,12 @@ impl<'arena, V: Hash + Copy + Ord> Context<'arena, V> {
     // soit alouer un nouveau nœud dans l'arène, ou utiliser un nœud
     // déjà existant.
     fn hashcons(&mut self, n: Node<'arena, V>) -> Bdd<'arena, V> {
-        // À COMPLÉTER
-        panic!()
+        if !self.hashcons.contains(&n) {
+            let node = self.alloc.alloc(n);
+            self.hashcons.insert(node);
+        }
+
+        return Bdd::<'arena, V>(self.hashcons.get(&n).unwrap())
     }
 
     // La méthode privée `node` permet de créer un nouveau nœud interne.
@@ -138,29 +142,30 @@ impl<'arena, V: Hash + Copy + Ord> Context<'arena, V> {
     // Cette fonction doit traiter de manière appropriée le cas où les deux fils
     // du nouveau nœud envisagé sont en fait égaux.
     fn node(&mut self, var: V, children: [Bdd<'arena, V>; 2]) -> Bdd<'arena, V> {
-        // À COMPLÉTER
-        panic!()
+        if children[0] == children[1] {
+            return children[0];
+        }
+        let node : Node<'arena, V> = Node::If { var: var, children: children };
+        return self.hashcons(node)
     }
 
     // La méthode `true_` renvoie le BDD correspondant à la formule booléenne
     // VRAI.
     pub fn true_(&mut self) -> Bdd<'arena, V> {
-        // À COMPLÉTER
-        panic!()
+        return Bdd(&Node::True)
     }
 
     // La méthode `false_` renvoie le BDD correspondant à la formule booléenne
     // VRAI.
     pub fn false_(&mut self) -> Bdd<'arena, V> {
-        // À COMPLÉTER
-        panic!()
+        return Bdd(&Node::False)
     }
 
     // La méthode `var` renvoie le BDD correspondant à la formule booléenne
     // réduite à une variable simple.
     pub fn var(&mut self, x: V) -> Bdd<'arena, V> {
-        // À COMPLÉTER
-        panic!()
+        let children = [self.false_(), self.true_()];
+        return self.node(x, children)
     }
 
     // La méthode `not` renvoie la négation du BDD donné en paramètre.
@@ -170,8 +175,14 @@ impl<'arena, V: Hash + Copy + Ord> Context<'arena, V> {
     // le contexte, pour être réutilisée lors de plusieurs appels à `not` sur
     // des BDDs proches.
     pub fn not(&mut self, x: Bdd<'arena, V>) -> Bdd<'arena, V> {
-        // À COMPLÉTER
-        panic!()
+        match x {
+            Bdd(&Node::True) => Bdd(&Node::False),
+            Bdd(&Node::False) => Bdd(&Node::True),
+            Bdd(&Node::If {var, children}) => {
+                let children2 = [self.not(children[0]), self.not(children[1])];
+                return self.node(var, children2)
+            }
+        }
     }
 
     // La méthode `and` renvoie la conjonction des BDDs donnés en paramètres.
