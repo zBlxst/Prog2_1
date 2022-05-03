@@ -241,8 +241,19 @@ impl<'arena, V: Hash + Copy + Ord> Bdd<'arena, V> {
     // Cette fonction peut supposer que le résultat du calcul est suffisamment
     // petit pour la capacité du type `u64`.
     pub fn nsat(self, vars: &[V]) -> u64 {
-        // À COMPLÉTER
-        panic!()
+        match self {
+            Bdd(Node::True) => return u64::pow(2, vars.len() as u32),
+            Bdd(Node::False) => return 0,
+            Bdd(Node::If{var, children}) => {
+                if vars[0] == *var {
+                    let nsat_left = children[0].nsat(&vars[1..]);
+                    let nsat_right = children[1].nsat(&vars[1..]);
+                    return nsat_left + nsat_right
+                } else {
+                    return 2*self.nsat(&vars[1..])
+                }
+            }
+        }
     }
 }
 
