@@ -1,8 +1,8 @@
 // Ces deux annotations permettent de désactiver des avertissements produits par
 // compilateur Rust, dus au fait que le code est incomplet dans cette version.
 // Elles devront être retirées lorsque les trous seront complétés.
-#![allow(unused_variables)]
-#![allow(dead_code)]
+// #![allow(unused_variables)]
+// #![allow(dead_code)]
 
 use std::collections::hash_set::HashSet;
 use std::hash::Hash;
